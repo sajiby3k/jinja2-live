@@ -1,0 +1,32 @@
+.container {
+  width: 95%;
+}
+#template,
+#render {
+    width: 100%;
+    min-height: 300px;
+    resize: vertical;
+    font-family: "Courier New", Courier, monospace;
+    font-size: small;
+    border: 1px solid #ccc;
+}
+#values {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    font-family: "Courier New", Courier, monospace;
+    font-size: small;
+    border: 1px solid #ccc;
+}
+
+#render {
+    background: #eee;
+}
+
+span.whitespace {
+    color: #ccc;
+}
+
+label {
+    font-weight: normal;
+}

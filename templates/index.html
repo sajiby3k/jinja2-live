@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% include 'headers.inc' %}
+    <script>
+        // copy render zone into clipboard
+        // from https://stackoverflow.com/questions/23048550/how-to-copy-a-divs-content-to-clipboard-without-flash/23048960
+         function CopyToClipboard (containerid) {
+           // Create a new textarea element and give it id='temp_element', minimize it and append it into the page
+           var textarea = document.createElement('textarea')
+           textarea.id = 'temp_element'
+           textarea.style.height = 0
+           document.body.appendChild(textarea)
+           // copy contents of container, but replace the dots
+           textarea.value = document.getElementById(containerid).value.replace(/\u02d9/g, ' ') + "\n"
+           var selector = document.querySelector('#temp_element')
+           selector.select()
+           document.execCommand('copy')
+           document.body.removeChild(textarea)
+         }
+    </script>
+    <title>Jinja live parser</title>
+</head>
+
+<body>
+    <!-- this page has two flavour called index and load -->
+    <form class="container">
+        {% if flavour=="load2" %}
+        <div class="row">
+            <div class="col-md-6">
+                    permanent link: <A HREF="{{ link }}">{{ link }}</A>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Template</h2>
+                <textarea id="template" spellcheck="false"> 
+                     {%- if flavour=="load" %}{{ template }}
+                     {%- else %}{% include 'example_template.html' %}
+                     {%- endif %}</textarea>
+            </div>
+            <div class="col-md-6">
+                <h2>Render</h2>
+                <textarea id="render" spellcheck="false"></textarea>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <h3>Values</h3>
+            </div>
+            <div class="col-md-4">
+                <div style="font-size:small;display:inline">
+                    <label><input type="radio" name="input_type" value="yaml" checked/> YAML</label>
+		    <br>
+                    <label><input type="radio" name="input_type" value="json"/> JSON</label>
+                 </div>
+            </div>
+        </div>
+       
+        <div class="row">
+            <div class="col-md-6">
+                <textarea id="values" spellcheck="false">
+                     {%- if flavour=="load" %}{{ values }}
+                     {%- else %}{% include 'example_values.html' %}
+                     {%- endif %}</textarea>
+            </div>
+            <div class="col-md-6">
+                    <button type="button" class="btn btn-success" style="width:100px" id="convert" value="Convert">
+                        <i class="glyphicon glyphicon-expand"> </i> &nbsp; Convert
+                    </button>
+                    <button type="button" class="btn btn-success pull-right" style="width:125px;" 
+                            id="select" value="Clipboard" onClick="CopyToClipboard('render')">
+                        <i class="glyphicon glyphicon-download-alt"> </i> &nbsp; To Clipboard
+                    </button>
+            </div>
+            <div class="col-md-6">
+		  <br>
+                  <button type="button" class="btn btn-danger" style="width:100px" id="clear" value="Clear" />
+                              <i class="glyphicon glyphicon-erase"> </i> &nbsp; Clear
+                  </button>
+            </div>
+            <div class="col-md-6">
+                  <br>
+                  <button type="button" class="btn btn-primary" style="width:100px" id="save" value="Save">
+                              <i class="glyphicon glyphicon-save"> </i> &nbsp; Save
+                   </button>
+                    {% if flavour=="load" %}
+                         key: <input type="text" id="sql_template_name" value="{{ sql_template_name }}"> 
+                    {% else %}
+                        key: <input type="text" id="sql_template_name" value="my_uniq_name">
+                    {% endif %}
+                     <button type="button" class="btn btn-info pull-right" style="width:125px" 
+                                 id="list" value="List" onClick="location.href='/list'">
+                         <i class="glyphicon glyphicon-search"> </i> &nbsp; List
+                     </button>
+            </div>
+  
+        </div>
+        <br>
+        <br>
+        <div class="row">
+            <div class="col-md-5">
+                <h2>Settings</h2>
+                <div id="settings">
+                    <label><input type="checkbox" name="showwhitespaces" checked="checked" /> Show whitespaces</label><br/>
+                    <label><input type="checkbox" name="dummyvalues" /> Use dummy values</label>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <h2>Custom Filters</h2>
+                <ul>
+                {% for f_name, f_func in custom_filters.items() %}
+                    <li>{{ f_name }}: {{ f_func.func_doc }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </form>
+</body>
+
+</html>
+

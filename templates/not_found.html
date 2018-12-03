@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+   {% include 'headers.inc' %}
+    <title>Jinja live parser - entry not found</title>
+</head>
+<body>
+    <form class="container">
+       <div class="row">
+            <div class="col-md-4">
+                  <br><br>
+                  key <kbd>{{ key }}</kbd> not found
+                  <br><br>
+            </div>
+       </div>
+       <div class="row">
+            <div class="col-md-2">
+                   <button type="button" class="btn btn-primary btn-xs" id="home" onClick="location.href='/'">
+                               <i class="glyphicon glyphicon-home"></i> &nbsp; Return
+                  </button>
+            </div>
+            <div class="col-md-2">
+                     <button type="button" class="btn btn-info btn-xs"
+                                 id="list" value="List" onClick="location.href='/list'">
+                         <i class="glyphicon glyphicon-search"> </i> &nbsp; List
+            </div>
+       </div>
+   </form>
+</body>
+</html>

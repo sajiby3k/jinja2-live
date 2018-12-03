@@ -1,0 +1,9 @@
+{% raw %}
+router bgp 65000
+  {%- for neigh in neighs %}
+  neighbor {{ neigh.ip }} remote-as {{ neigh.as }}
+     {%- if neigh.as == 65000 %}
+  neighbor {{ neigh.ip }} next-hop self
+     {%- endif %}
+  {%- endfor %}
+{% endraw %}
