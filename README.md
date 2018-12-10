@@ -20,7 +20,7 @@ All you need is Python and preferably [pip](https://pypi.python.org/pypi/pip). C
 
 ## Usage
 edit config.py, customize listen address and port
-You are all set, go to `http://localhost:5000/` and have fun.  
+You are all set, go to `http://localhost:8080/` and have fun.  
 You can add any custom filter you'd like in `filters.py`.  Just make sure the function's name starts with `filter_`.
 
 
