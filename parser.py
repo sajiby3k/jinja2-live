@@ -18,6 +18,9 @@ SQL_FILE = 'jinja_db.sqlite'
 app = Flask(__name__)
 
 
+# ---------------
+# utilities: get custom filters and read nested yaml file
+# ---------------
 def get_custom_filters():
     import filters
     custom_filters = {}
@@ -29,10 +32,16 @@ def get_custom_filters():
     return custom_filters
 
 
+# ---------------
+# home page: display a demo pattern
+# ---------------
 @app.route("/")
 def home():
     return render_template('index.html', flavour="index", custom_filters=get_custom_filters())
 
+# ---------------
+# SQL delete entry in template table
+# ---------------
 @app.route('/delete/<sql_template_name>')
 def delete(sql_template_name):
     print("delete:", sql_template_name)
@@ -47,8 +56,29 @@ def delete(sql_template_name):
         print( 'er:', er.message)
         return "Syntax error in SQL"
 
+# ---------------
+# SQL rename entry
+# ---------------
+@app.route('/rename_to', methods=['POST'])
+def renameto():
+     print("rename from :", request.form['from'], "to", request.form['to'])
+     try:
+         conn = sqlite3.connect(SQL_FILE)
+         c = conn.cursor()
+         c.execute("UPDATE templates SET name=? WHERE name=?", 
+                       (request.form['to'], request.form['from']))
+         conn.commit()
+         conn.close()
+         return name_list()
+     except sqlite3.Error as er:
+         print( 'er:', er.message)
+         return "Syntax error in SQL"
 
 
+
+# ---------------
+# load: read an entry and display it
+# ---------------
 @app.route('/load/<sql_template_name>')
 def load(sql_template_name):
     print("load:", sql_template_name)
@@ -77,6 +107,9 @@ def load(sql_template_name):
         return "Syntax error in SQL"
 
 
+# ---------------
+# list: display table template content
+# ---------------
 @app.route('/list', methods=['GET', 'POST'])
 def name_list():
     print("list")
@@ -96,6 +129,9 @@ def name_list():
 
 
 
+# ---------------
+# save: record entry into table template
+# ---------------
 @app.route('/save', methods=['GET', 'POST'])
 def save():
     print("save into", SQL_FILE)
@@ -109,13 +145,16 @@ def save():
         conn.commit()
         conn.close()
         print("entry {} updated".format(db_key))
-        # return redirect( "/load/{}".format(db_key) )
+        # display the same page
         return load(db_key)
     except sqlite3.Error as er:
         print( 'er:', er.message)
         return "Syntax error in SQL"
 
 
+# ---------------
+# convert: render template
+# ---------------
 @app.route('/convert', methods=['GET', 'POST'])
 def convert():
     jinja2_env = Environment()
@@ -132,30 +171,20 @@ def convert():
         return "Syntax error in jinja2 template: {0}".format(e)
 
 
-    dummy_values = [ 'Lorem', 'Ipsum', 'Amet', 'Elit', 'Expositum',
-        'Dissimile', 'Superiori', 'Laboro', 'Torquate', 'sunt',
-    ]
     values = {}
-    if bool(int(request.form['dummyvalues'])):
-        # List template variables (introspection)
-        vars_to_fill = meta.find_undeclared_variables(jinja2_env.parse(request.form['template']))
-
-        for v in vars_to_fill:
-            values[v] = choice(dummy_values)
-    else:
-        # Check JSON for errors
-        if request.form['input_type'] == "json":
+    # Check JSON for errors
+    if request.form['input_type'] == "json":
             try:
                 values = json.loads(request.form['values'])
             except ValueError as e:
                 return "Value error in JSON: {0}".format(e)
-        # Check YAML for errors
-        elif request.form['input_type'] == "yaml":
+    # Check YAML for errors
+    elif request.form['input_type'] == "yaml":
             try:
                 values = yaml.load(request.form['values'])
             except (ValueError, yaml.parser.ParserError, TypeError) as e:
                 return "Value error in YAML: {0}".format(e)
-        else:
+    else:
             return "Undefined input_type: {0}".format(request.form['input_type'])
 
     # If ve have empty var array or other errors we need to catch it and show
@@ -184,3 +213,4 @@ if __name__ == "__main__":
         port=config.PORT,
         debug=config.DEBUG,
     )
+

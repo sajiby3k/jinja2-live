@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% include 'headers.inc' %}
+    <title>Jinja live parser - list</title>
+</head>
+<body>
+    <form class="container">
+        <H2>list of known entries</H2>
+        <div class="row">
+            <div class="col-md-8">
+                   <div class="row" style="background-color: #f0f0f0;">
+                        <div class="col-md-4"> Key </div>
+                        <div class="col-md-4"> Saved </div>
+                   </div>
+                   
+               {% for row in rows %}
+                   <div class="row">
+                        <div class="col-md-4"> <a href="../load/{{ row[0] }}">{{ row [0] }}</a></div>
+                        <div class="col-md-4">{{ row[1] }}</div>
+                        <div class="col-md-2">
+                                  <button type="button" class="btn btn-danger btn-xs" id="delete" value="Delete"
+                                          onClick="location.href='/delete/{{row[0]}}'">
+                                      <i class="glyphicon glyphicon-trash"> </i>
+                                  </button>
+                        </div>
+                    </div>
+               {% endfor %}
+            </div>
+         </div>
+        <div class="row">
+            <div class="col-md-6">
+              <br>
+                  <button type="button" class="btn btn-primary btn-xs" id="home" onClick="location.href='/'">
+                               <i class="glyphicon glyphicon-home"></i> &nbsp; Return
+                  </button>
+            </div>
+        <div class="row">
+            <div class="col-md-6 pull-right">
+              <br>
+               total: {{ nb }} entries
+            </div>
+        </div>
+      </form>
+</body>
+</html>
+

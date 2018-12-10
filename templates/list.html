@@ -1,47 +1,86 @@
-<!DOCTYPE html>
 <html>
 <head>
-    {% include 'headers.inc' %}
-    <title>Jinja live parser - list</title>
+     {% include 'headers.inc' %}
+     <title>Jinja live parser - list</title>
 </head>
-<body>
-    <form class="container">
-        <H2>list of known entries</H2>
-        <div class="row">
-            <div class="col-md-8">
-                   <div class="row" style="background-color: #f0f0f0;">
-                        <div class="col-md-4"> Key </div>
-                        <div class="col-md-4"> Saved </div>
-                   </div>
-                   
-               {% for row in rows %}
-                   <div class="row">
-                        <div class="col-md-4"> <a href="../load/{{ row[0] }}">{{ row [0] }}</a></div>
-                        <div class="col-md-4">{{ row[1] }}</div>
-                        <div class="col-md-2">
-                                  <button type="button" class="btn btn-danger btn-xs" id="delete" value="Delete"
-                                          onClick="location.href='/delete/{{row[0]}}'">
-                                      <i class="glyphicon glyphicon-trash"> </i>
-                                  </button>
-                        </div>
+<form name="data" method="POST" action="/rename_to">
+<input type="hidden" name="from" />
+<input type="hidden" name="to" />
+</form>
+
+     <form class="container">
+         <H2>list of known entries</H2>
+         <div id="rename_to"></div><br>
+         <div class="row">
+             <div class="col-md-10">
+                    <div class="row" style="background-color: #f0f0f0;">
+                         <div class="col-md-4"> Key </div>
+                         <div class="col-md-3"> Saved </div>
+                         <div class="col-md-2"> </div>
                     </div>
-               {% endfor %}
-            </div>
+
+                {% for row in rows %}
+                    <div class="row">
+                         <div class="col-md-4">
+                                 <a href="../load/{{ row[0] }}" class="edithide{{loop.index}}" id="entry{{loop.index}}">{{ row[0] }}</A>
+                                 <input type="text" id="new_entry{{loop.index}}" class="editshow{{loop.index}}" value="{{row[0]}}" />
+                         </div>
+                         <div class="col-md-3">{{ row[1] }}</div>
+                         <div class="col-md-2" id="menu{{loop.index}}">
+                                   <button type="button" class="btn btn-danger btn-xs edithide" 
+				           id="delete{{loop.index}}" value="Delete"
+                                           onClick="location.href='/delete/{{row[0]}}'">
+                                       <i class="glyphicon glyphicon-trash"> </i>
+                                   </button>
+                                   <button type="button" class="btn btn-primary btn-xs pressme{{loop.index}} edithide"
+                                           id="rename_{{loop.index}}">
+                                       <i class="glyphicon glyphicon-pencil"> </i>
+                                   </button>
+                                   <button type="button" class="btn btn-danger btn-xs  editshow{{loop.index}} pressme{{loop.index}}"
+                                           id="cancel{{loop.index}}" value="Cancel" >
+                                       <i class="glyphicon glyphicon-remove"> </i>
+                                   </button>
+                                   <button type="button" class="btn btn-success btn-xs pressme{{loop.index}} editshow{{loop.index}}"
+                                           id="do_{{loop.index}}" onclick="doRename({{loop.index}})">
+                                       <i class="glyphicon glyphicon-ok"> </i>
+                                   </button>
+                         </div>
+                     </div>
+                {% endfor %}
+             </div>
+          </div>
+         <div class="row">
+             <div class="col-md-6">
+               <br>
+                   <button type="button" class="btn btn-primary btn-xs" id="home" onClick="location.href='/'">
+                                <i class="glyphicon glyphicon-home"></i> &nbsp; Return
+                   </button>
+             </div>
+         <div class="row">
+             <div class="col-md-6 pull-right">
+               <br>
+                total: {{ nb }} entries
+             </div>
          </div>
-        <div class="row">
-            <div class="col-md-6">
-              <br>
-                  <button type="button" class="btn btn-primary btn-xs" id="home" onClick="location.href='/'">
-                               <i class="glyphicon glyphicon-home"></i> &nbsp; Return
-                  </button>
-            </div>
-        <div class="row">
-            <div class="col-md-6 pull-right">
-              <br>
-               total: {{ nb }} entries
-            </div>
-        </div>
-      </form>
+       </form>
+       <script>
+            {% for row in rows %}
+               $(".editshow{{loop.index}}").hide();
+               // hide/show all grid buttons
+               $(".pressme{{loop.index}}").click( function() {
+                           $(".editshow{{loop.index}}").toggle();
+                           $(".edithide{{loop.index}}").toggle();
+                           $(".edithide").toggle();
+                  } );
+            {% endfor %}
+            // send rename_to POST request. Copy values into hidden form and apply
+            function doRename(row) {
+                 document.data.from.value = document.getElementById("entry" + row).innerText;
+                 document.data.to.value   = document.getElementById("new_entry" + row).value;
+                 document.data.submit();
+            }
+       </script>
 </body>
 </html>
+
 

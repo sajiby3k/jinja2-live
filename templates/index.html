@@ -87,9 +87,9 @@
                               <i class="glyphicon glyphicon-save"> </i> &nbsp; Save
                    </button>
                     {% if flavour=="load" %}
-                         key: <input type="text" id="sql_template_name" value="{{ sql_template_name }}"> 
+                         key: <input type="text" id="sql_template_name" value="{{ sql_template_name }}" /> 
                     {% else %}
-                        key: <input type="text" id="sql_template_name" value="my_uniq_name">
+                        key: <input type="text" id="sql_template_name" value="my_uniq_name" />
                     {% endif %}
                      <button type="button" class="btn btn-info pull-right" style="width:125px" 
                                  id="list" value="List" onClick="location.href='/list'">
@@ -105,7 +105,6 @@
                 <h2>Settings</h2>
                 <div id="settings">
                     <label><input type="checkbox" name="showwhitespaces" checked="checked" /> Show whitespaces</label><br/>
-                    <label><input type="checkbox" name="dummyvalues" /> Use dummy values</label>
                 </div>
             </div>
             <div class="col-md-7">
