@@ -27,3 +27,5 @@ You can add any custom filter you'd like in `filters.py`.  Just make sure the fu
 ## Preview
 
 ![preview](preview.png)
+![preview function list](preview-list.png)
+
