@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 from jinja2 import Environment, meta, exceptions
 from random import choice
 from inspect import getmembers, isfunction
@@ -12,6 +12,9 @@ import json
 import yaml
 import config
 import sqlite3
+import os
+import csv
+import tempfile
 
 
 SQL_FILE = 'jinja_db.sqlite'
@@ -30,6 +33,28 @@ def get_custom_filters():
             custom_filters[filter_name] = m[1]
 
     return custom_filters
+
+def sqlite2csv(csv_file):
+    rc = False
+    try:
+        conn = sqlite3.connect(SQL_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM templates")
+        with open(csv_file, 'w+') as f:
+           writer = csv.writer(f)
+           print(csv_file)
+           writer.writerow(['name', 'template', 'params', 'timestamp'])
+           for row in cursor:
+               print(row[0])
+               writer.writerow(row)
+        rc = True
+    except:
+        rc=False
+
+    conn.commit()
+    conn.close()
+    return rc
+
 
 
 # ---------------
@@ -123,9 +148,29 @@ def name_list():
         conn.close()
         return render_template('list.html', nb=len(rows), rows=rows, root=request.url_root)
     except:
-        pass
+        return ('<html><body><h2>Internal Error</h2></body></html>')
 
 
+# ---------------
+# csv: save database in csv format
+# ---------------
+@app.route('/csv', methods=['GET', 'POST'])
+def send_csv():
+    tmp_file = tempfile.gettempdir() + "/db.csv"
+    print(tmp_file)
+    if  sqlite2csv(tmp_file):
+        with open(tmp_file) as fp:
+            csv = fp.read()
+        return Response(
+                          csv,
+                          mimetype="text/csv",
+                          headers={"Content-disposition" : "attachment; filename=jinja2_templates.csv"})
+         # os.remove(tmp_file)
+    else:
+        # os.remove(tmp_file)
+        return ('<html><body><h2>Internal Error</h2></body></html>')
+         
+    
 
 
 
