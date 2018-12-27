@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jinja live parser</title>
 
     <! -- AJAX -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
@@ -13,5 +17,14 @@
     <!-- application style and scripts -->
     <script src="{{ url_for('static', filename='js/convert.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block head %}
+    {% endblock %}
+</head>
+<body>
+    {% block body %}
+    {% endblock %}
+</body>
+</html>
 
 

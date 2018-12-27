@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 from flask import Flask, render_template, request, redirect, url_for, Response
 from jinja2 import Environment, meta, exceptions
 from random import choice
-from inspect import getmembers, isfunction
+import inspect
 from cgi import escape
 import logging
 import logging.handlers
@@ -25,14 +25,13 @@ app = Flask(__name__)
 # utilities: get custom filters and read nested yaml file
 # ---------------
 def get_custom_filters():
-    import filters
+    import netaddr_filters
     custom_filters = {}
-    for m in getmembers(filters):
-        if m[0].startswith('filter_') and isfunction(m[1]):
-            filter_name = m[0][7:]
-            custom_filters[filter_name] = m[1]
-
+    # getmembers return the name of function and pointer to its description
+    for m in inspect.getmembers(netaddr_filters, inspect.isfunction):
+        custom_filters[m[0]] = m[1].__doc__ if m[1].__doc__ else ""
     return custom_filters
+
 
 def sqlite2csv(csv_file):
     rc = False

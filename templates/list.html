@@ -1,8 +1,10 @@
-<html>
-<head>
-     {% include 'headers.inc' %}
-     <title>Jinja live parser - list</title>
-</head>
+{% extends 'base.html' %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+
 <form name="data" method="POST" action="/rename_to">
 <input type="hidden" name="from" />
 <input type="hidden" name="to" />
@@ -83,7 +85,6 @@
                  document.data.submit();
             }
        </script>
-</body>
-</html>
 
+{% endblock %}
 

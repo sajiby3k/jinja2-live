@@ -1,7 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-    {% include 'headers.inc' %}
+{% extends 'base.html' %}
+
+{% block head %}
     <script>
         // copy render zone into clipboard
         // from https://stackoverflow.com/questions/23048550/how-to-copy-a-divs-content-to-clipboard-without-flash/23048960
@@ -19,10 +18,10 @@
            document.body.removeChild(textarea)
          }
     </script>
-    <title>Jinja live parser</title>
-</head>
+{% endblock %}
 
-<body>
+    
+{% block body %}
     <!-- this page has two flavour called index and load -->
     <form class="container">
         {% if flavour=="load2" %}
@@ -101,23 +100,24 @@
         <br>
         <br>
         <div class="row">
-            <div class="col-md-5">
+            <div class="col-md-6">
                 <h2>Settings</h2>
                 <div id="settings">
                     <label><input type="checkbox" name="showwhitespaces" checked="checked" /> Show whitespaces</label><br/>
                 </div>
             </div>
-            <div class="col-md-7">
+            <div class="col-md-6">
                 <h2>Custom Filters</h2>
-                <ul>
-                {% for f_name, f_func in custom_filters.items() %}
-                    <li>{{ f_name }}: {{ f_func.func_doc }}</li>
+                {% for name,doc in custom_filters|dictsort %}
+                   <div class="row">
+                     <div class="col-md-2">{{ name }}</div>
+                     <div class="col-md-10" style="color: gray;">{{ doc }}</div>
+                  </div>
                 {% endfor %}
-                </ul>
+
+                </table>
             </div>
         </div>
     </form>
-</body>
-
-</html>
+{% endblock %}
 
