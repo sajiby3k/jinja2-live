@@ -16,6 +16,9 @@ import os
 import csv
 import tempfile
 
+# local module
+import netaddr_filters
+
 
 SQL_FILE = 'jinja_db.sqlite'
 app = Flask(__name__)
@@ -24,13 +27,20 @@ app = Flask(__name__)
 # ---------------
 # utilities: get custom filters and read nested yaml file
 # ---------------
-def get_custom_filters():
-    import netaddr_filters
+def get_custom_filters_description():
     custom_filters = {}
     # getmembers return the name of function and pointer to its description
     for m in inspect.getmembers(netaddr_filters, inspect.isfunction):
         custom_filters[m[0]] = m[1].__doc__ if m[1].__doc__ else ""
     return custom_filters
+
+
+def get_custom_filters_entrypoints():
+    custom_filters_ep = {}
+    # getmembers return the name of function and pointer to its description
+    for m in inspect.getmembers(netaddr_filters, inspect.isfunction):
+        custom_filters_ep[m[0]] = m[1]
+    return custom_filters_ep
 
 
 def sqlite2csv(csv_file):
@@ -61,7 +71,7 @@ def sqlite2csv(csv_file):
 # ---------------
 @app.route("/")
 def home():
-    return render_template('index.html', flavour="index", custom_filters=get_custom_filters())
+    return render_template('index.html', flavour="index", custom_filters=get_custom_filters_description())
 
 # ---------------
 # SQL delete entry in template table
@@ -125,7 +135,7 @@ def load(sql_template_name):
                                 values=values, 
                                 sql_template_name=sql_template_name,
                                 link = request.base_url,
-                                custom_filters=get_custom_filters())
+                                custom_filters=get_custom_filters_description())
     except sqlite3.Error as er:
         print( 'er:', er.message)
         return "Syntax error in SQL"
@@ -204,7 +214,7 @@ def convert():
     jinja2_env = Environment()
 
     # Load custom filters
-    custom_filters = get_custom_filters()
+    custom_filters = get_custom_filters_entrypoints()
     # app.logger.debug('Add the following customer filters to Jinja environment: %s' % ', '.join(custom_filters.keys()))
     jinja2_env.filters.update(custom_filters)
 
