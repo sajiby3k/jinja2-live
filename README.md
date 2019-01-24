@@ -4,6 +4,7 @@ A Jinja2 live parser based on the live parser written by Antonin Bourguignon (ht
 - a database for saving templates and data
 - a copy to clipboard button
 - import of all netaddr filters as they are available in ansible
+- support of json_query filter built over jmespath (same as ansible)
 
 
 All you need is Python and preferably [pip](https://pypi.python.org/pypi/pip). Can parse JSON and YAML inputs.
