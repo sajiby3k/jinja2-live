@@ -16,8 +16,10 @@ import os
 import csv
 import tempfile
 
-# local module
-import netaddr_filters
+# local modules
+CUSTOM_MODULES = ('netaddr_filters', 'json_query')
+import importlib
+OBJS = [importlib.import_module(custom_filter) for custom_filter in CUSTOM_MODULES]
 
 
 SQL_FILE = 'jinja_db.sqlite'
@@ -30,16 +32,18 @@ app = Flask(__name__)
 def get_custom_filters_description():
     custom_filters = {}
     # getmembers return the name of function and pointer to its description
-    for m in inspect.getmembers(netaddr_filters, inspect.isfunction):
-        custom_filters[m[0]] = m[1].__doc__ if m[1].__doc__ else ""
+    for cf in OBJS:
+        for m in inspect.getmembers(cf, inspect.isfunction):
+            custom_filters[m[0]] = m[1].__doc__ if m[1].__doc__ else ""
     return custom_filters
 
 
 def get_custom_filters_entrypoints():
     custom_filters_ep = {}
     # getmembers return the name of function and pointer to its description
-    for m in inspect.getmembers(netaddr_filters, inspect.isfunction):
-        custom_filters_ep[m[0]] = m[1]
+    for cf in OBJS:
+       for m in inspect.getmembers(cf, inspect.isfunction):
+            custom_filters_ep[m[0]] = m[1]
     return custom_filters_ep
 
 
