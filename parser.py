@@ -75,7 +75,9 @@ def extract_path_and_entry (name):
         path, sql_template_name =  name.rsplit('/', 1)
     except:
         path = ''
-        sql_template_name = path_and_template_name
+        sql_template_name = name
+    if not path.startswith('/'):
+        path = '/' + path
     return path, sql_template_name
 
 
@@ -91,12 +93,12 @@ def home():
 # ---------------
 @app.route('/delete/<path:template_full_name>')
 def delete(sql_template_name):
-    path, entry = extract_path_and_entry(template_full_name)
-    print("delete:", path, entry)
+    path, template_name = extract_path_and_entry(template_full_name)
+    print("delete:", path, template_name)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("DELETE FROM templates WHERE name=? AND path=?", (entry, path,))
+        c.execute("DELETE FROM templates WHERE name=? AND path=?", (template_name, path,))
         conn.commit()
         conn.close()
         return name_list()
@@ -109,12 +111,12 @@ def delete(sql_template_name):
 # ---------------
 @app.route('/rename_to', methods=['POST'])
 def renameto():
-     print("rename from :", request.form['from'], "to", request.form['to'])
+     print("rename from :", request.form['from'], "to", request.form['to'], "path is",  request.form['path'])
      try:
          conn = sqlite3.connect(SQL_FILE)
          c = conn.cursor()
-         c.execute("UPDATE templates SET name=? WHERE name=?", 
-                       (request.form['to'], request.form['from']))
+         c.execute("UPDATE templates SET name=? WHERE name=? AND path=?", 
+                       (request.form['to'], request.form['from'], request.form['path']))
          conn.commit()
          conn.close()
          return name_list()
@@ -129,6 +131,7 @@ def renameto():
 # ---------------
 @app.route('/load/<path:template_full_name>')
 def load(template_full_name):
+    print("load: full name", template_full_name)
     path, template_name = extract_path_and_entry(template_full_name)
     print("load: path", path, "entry:", template_name)
     try:
@@ -138,7 +141,7 @@ def load(template_full_name):
         row = c.fetchone()
         # found ? 
         if row is None:
-           return render_template('not_found.html', path=path, key=entry)
+           return render_template('not_found.html', path=path, key=template_name)
         # assign variables to row
         (path, template_name, template, values, dummytime) = row
         # print(template_name, template, values, dummytime)
@@ -161,10 +164,15 @@ def load(template_full_name):
 # list: display table template content
 # ---------------
 @app.route('/list/<path:dir>', methods=['GET', 'POST'])
+@app.route('/list/', methods=['GET', 'POST'], defaults={'dir': ''} )
 @app.route('/list', methods=['GET', 'POST'], defaults={'dir': ''} )
 def name_list(dir):
-    # dir += "%"
     print("list dir=", dir)
+    try: 
+       previous_dir, dummy = dir.rsplit('/', 1)
+    except:
+       previous_dir = ''
+    print("previous_path", previous_dir, "len:", len(previous_dir))
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
@@ -174,14 +182,14 @@ def name_list(dir):
         print(rows)
 
         c.execute("SELECT path FROM templates WHERE path LIKE ? AND path NOT LIKE ?", 
-                       	('%{}%'.format(dir), '%{}%/%'.format(dir),))
+                       	('%{}/%'.format(dir), '%{}/%/%'.format(dir),))
         paths = c.fetchall()
         p = sorted(set([ path[0] for path in paths]))
         print(p)
 
         conn.commit()
         conn.close()
-        return render_template('list.html', nb=len(rows), rows=rows, paths=p, root=request.url_root)
+        return render_template('list.html', nb=len(rows), rows=rows, paths=p, current_path=dir, previous_path=previous_dir, root=request.url_root)
     except:
         return ('<html><body><h2>Internal Error</h2></body></html>')
 
@@ -214,9 +222,12 @@ def send_csv():
 # ---------------
 @app.route('/save', methods=['GET', 'POST'])
 def save():
-    print("save into", SQL_FILE)
+    print("save entry", request.form['path'], ":", request.form['sql_template_name'], " into", SQL_FILE)
     try:
         db_key = request.form['sql_template_name']
+        path = request.form['path']
+        if not path.startswith('/'):
+           path = '/' + path
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
         # update the SQL entry 
@@ -227,9 +238,10 @@ def save():
                          request.form['values']) )
         conn.commit()
         conn.close()
-        print("entry {} updated".format(db_key))
+        print("entry {}/{} updated".format(path, db_key))
         # display the same page
-        return load(db_key)
+        full_name = path + '/' + db_key
+        return load(full_name)
     except sqlite3.Error as er:
         print( 'er:', er.message)
         return "Syntax error in SQL"

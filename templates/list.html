@@ -18,11 +18,18 @@
                     <div class="row" style="background-color: #f0f0f0;">
                          <div class="col-md-4"> Path</div>
                     </div>
+                {% if previous_path | length > 1  %}
+                    <div class="row">
+                         <div class="col-md-4">
+                                 <a href="..">..</A>
+                         </div>
+                    </div>
+                {% endif %}
 
                 {% for path in paths %}
                     <div class="row">
                          <div class="col-md-4">
-                                 <a href="../list/{{ path }}"> {{ path }}</A>
+                                 <a href="/list{{ path }}"> {{ path }}</A>
                          </div>
                     </div>
                 {% endfor %}
@@ -40,14 +47,14 @@
                 {% for row in rows %}
                     <div class="row">
                          <div class="col-md-4">
-                                 <a href="../load/{{ row[0] }}" class="edithide{{loop.index}}" id="entry{{loop.index}}">{{ row[0] }}</A>
+                                 <a href="/load/{{ current_path }}/{{ row[0] }}" class="edithide{{loop.index}}" id="entry{{loop.index}}">{{ row[0] }}</A>
                                  <input type="text" id="new_entry{{loop.index}}" class="editshow{{loop.index}}" value="{{row[0]}}" />
                          </div>
                          <div class="col-md-3">{{ row[1] }}</div>
                          <div class="col-md-2" id="menu{{loop.index}}">
                                    <button type="button" class="btn btn-danger btn-xs edithide" 
 				           id="delete{{loop.index}}" value="Delete"
-                                           onClick="location.href='/delete/{{row[0]}}'">
+                                           onClick="location.href='/delete/{{ current_path }}/{{row[0]}}'">
                                        <i class="glyphicon glyphicon-trash"> </i>
                                    </button>
                                    <button type="button" class="btn btn-primary btn-xs pressme{{loop.index}} edithide"
@@ -98,6 +105,7 @@
             function doRename(row) {
                  document.data.from.value = document.getElementById("entry" + row).innerText;
                  document.data.to.value   = document.getElementById("new_entry" + row).value;
+                 document.data.path.value = {{ current_path }}
                  document.data.submit();
             }
        </script>
