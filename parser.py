@@ -56,7 +56,7 @@ def sqlite2csv(csv_file):
         with open(csv_file, 'w+') as f:
            writer = csv.writer(f)
            print(csv_file)
-           writer.writerow(['name', 'template', 'params', 'timestamp'])
+           writer.writerow(['path', 'name', 'template', 'params', 'timestamp'])
            for row in cursor:
                print(row[0])
                writer.writerow(row)
@@ -117,13 +117,18 @@ def renameto():
 # ---------------
 # load: read an entry and display it
 # ---------------
-@app.route('/load/<sql_template_name>')
-def load(sql_template_name):
-    print("load:", sql_template_name)
+@app.route('/load/<path:path_and_template_name>')
+def load(path_and_template_name):
+    try:
+        path, sql_template_name =  path_and_template_name.rsplit('/', 1)
+    except:
+        path = ''
+        sql_template_name = path_and_template_name
+    print("load: path", path, "entry:", sql_template_name)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("SELECT * FROM templates WHERE name=?", (sql_template_name,))
+        c.execute("SELECT * FROM templates WHERE name=? AND path=?", (sql_template_name, path))
         row = c.fetchone()
         # found ? 
         if row is None:
@@ -148,15 +153,18 @@ def load(sql_template_name):
 # ---------------
 # list: display table template content
 # ---------------
-@app.route('/list', methods=['GET', 'POST'])
-def name_list():
-    print("list")
+@app.route('/list/<path:dir>', methods=['GET', 'POST'])
+@app.route('/list', methods=['GET', 'POST'], defaults={'dir': ''} )
+def name_list(dir):
+    # dir += "%"
+    print("list dir=", dir)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("SELECT name,timestamp FROM templates ORDER BY name")
+        # c.execute("SELECT name,timestamp FROM templates ORDER BY name WHERE name LIKE ?%", dir)
+        c.execute("SELECT name,timestamp FROM templates WHERE name LIKE ?", ('%{}%'.format(dir),))
         rows = c.fetchall()
-        # print(rows)
+        print(rows)
         conn.commit()
         conn.close()
         return render_template('list.html', nb=len(rows), rows=rows, root=request.url_root)
@@ -198,8 +206,11 @@ def save():
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
         # update the SQL entry 
-        c.execute("INSERT OR REPLACE INTO templates (name, template, params) VALUES (?, ?, ?)", 
-                  (request.form['sql_template_name'], request.form['template'], request.form['values']))
+        c.execute("INSERT OR REPLACE INTO templates (path, name, template, params) VALUES (?, ?, ?, ?)", 
+                      (  request.form['path'], 
+                         request.form['sql_template_name'], 
+                         request.form['template'], 
+                         request.form['values']) )
         conn.commit()
         conn.close()
         print("entry {} updated".format(db_key))
