@@ -66,31 +66,34 @@
                      {%- endif %}</textarea>
             </div>
             <div class="col-md-6">
-                    <button type="button" class="btn btn-success" style="width:100px" id="convert" value="Convert">
+                    <button type="button" class="btn btn-success" style="width:125px" id="convert" value="Convert">
                         <i class="glyphicon glyphicon-expand"> </i> &nbsp; Convert
                     </button>
-                    <button type="button" class="btn btn-success pull-right" style="width:125px;" 
+                    <button type="button" class="btn btn-success" style="width:125px;" 
                             id="select" value="Clipboard" onClick="CopyToClipboard('render')">
                         <i class="glyphicon glyphicon-download-alt"> </i> &nbsp; To Clipboard
                     </button>
-            </div>
-            <div class="col-md-6">
-		  <br>
-                  <button type="button" class="btn btn-danger" style="width:100px" id="clear" value="Clear" />
+                  <button type="button" class="btn btn-danger pull-right" style="width:100px" id="clear" value="Clear" />
                               <i class="glyphicon glyphicon-erase"> </i> &nbsp; Clear
                   </button>
             </div>
-            <div class="col-md-6">
-                  <br>
-                  <button type="button" class="btn btn-primary" style="width:100px" id="save" value="Save">
+            <div class="col-md-6" style="margin-top:44px">
+                  <button type="button" class="btn btn-primary" style="width:125px" id="save" value="Save">
                               <i class="glyphicon glyphicon-save"> </i> &nbsp; Save
                    </button>
+                   <div class="pull-right">
+                   <i>path/key:</i>
                     {% if flavour=="load" %}
-                         key: <input type="text" id="sql_template_name" value="{{ sql_template_name }}" /> 
+                         <input type="text" style="width:100px" id="path" value="{{ path }}" /> 
+                         /<input type="text" style="width:150px" id="sql_template_name" value="{{ sql_template_name }}" /> 
                     {% else %}
-                        key: <input type="text" id="sql_template_name" value="my_uniq_name" />
+                        <input type="text" style="width:100px" id="path" value="" /> 
+                        /<input type="text" style="width:150px" id="sql_template_name" value="my_uniq_name" />
                     {% endif %}
-                     <button type="button" class="btn btn-info pull-right" style="width:125px" 
+                    </div>
+	    </div>
+            <div class="col-md-6" style="margin-top:6px">
+                     <button type="button" class="btn btn-info" style="width:125px" 
                                  id="list" value="List" onClick="location.href='/list'">
                          <i class="glyphicon glyphicon-search"> </i> &nbsp; List
                      </button>

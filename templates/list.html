@@ -16,6 +16,22 @@
          <div class="row">
              <div class="col-md-10">
                     <div class="row" style="background-color: #f0f0f0;">
+                         <div class="col-md-4"> Path</div>
+                    </div>
+
+                {% for path in paths %}
+                    <div class="row">
+                         <div class="col-md-4">
+                                 <a href="../list/{{ path }}"> {{ path }}</A>
+                         </div>
+                    </div>
+                {% endfor %}
+             </div>
+         </div>
+
+         <div class="row" style="margin-top:24px">
+             <div class="col-md-10">
+                    <div class="row" style="background-color: #f0f0f0;">
                          <div class="col-md-4"> Key </div>
                          <div class="col-md-3"> Saved </div>
                          <div class="col-md-2"> </div>

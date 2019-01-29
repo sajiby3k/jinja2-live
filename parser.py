@@ -69,6 +69,15 @@ def sqlite2csv(csv_file):
     return rc
 
 
+# from /A/B/C/E return path /A/B/C and entry E
+def extract_path_and_entry (name):
+    try:
+        path, sql_template_name =  name.rsplit('/', 1)
+    except:
+        path = ''
+        sql_template_name = path_and_template_name
+    return path, sql_template_name
+
 
 # ---------------
 # home page: display a demo pattern
@@ -80,13 +89,14 @@ def home():
 # ---------------
 # SQL delete entry in template table
 # ---------------
-@app.route('/delete/<sql_template_name>')
+@app.route('/delete/<path:template_full_name>')
 def delete(sql_template_name):
-    print("delete:", sql_template_name)
+    path, entry = extract_path_and_entry(template_full_name)
+    print("delete:", path, entry)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("DELETE FROM templates WHERE name=?", (sql_template_name,))
+        c.execute("DELETE FROM templates WHERE name=? AND path=?", (entry, path,))
         conn.commit()
         conn.close()
         return name_list()
@@ -117,32 +127,29 @@ def renameto():
 # ---------------
 # load: read an entry and display it
 # ---------------
-@app.route('/load/<path:path_and_template_name>')
-def load(path_and_template_name):
-    try:
-        path, sql_template_name =  path_and_template_name.rsplit('/', 1)
-    except:
-        path = ''
-        sql_template_name = path_and_template_name
-    print("load: path", path, "entry:", sql_template_name)
+@app.route('/load/<path:template_full_name>')
+def load(template_full_name):
+    path, template_name = extract_path_and_entry(template_full_name)
+    print("load: path", path, "entry:", template_name)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("SELECT * FROM templates WHERE name=? AND path=?", (sql_template_name, path))
+        c.execute("SELECT * FROM templates WHERE name=? AND path=?", (template_name, path))
         row = c.fetchone()
         # found ? 
         if row is None:
-           return render_template('not_found.html', key=sql_template_name)
+           return render_template('not_found.html', path=path, key=entry)
         # assign variables to row
-        (sql_template_name, template, values, dummytime) = row
-        # print(sql_template_name, template, values, dummytime)
+        (path, template_name, template, values, dummytime) = row
+        # print(template_name, template, values, dummytime)
         conn.commit()
         conn.close()
         return render_template('load.html', 
                                 flavour="load",
                                 template=template, 
                                 values=values, 
-                                sql_template_name=sql_template_name,
+                                sql_template_name=template_name,
+				path=path,
                                 link = request.base_url,
                                 custom_filters=get_custom_filters_description())
     except sqlite3.Error as er:
@@ -161,13 +168,20 @@ def name_list(dir):
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        # c.execute("SELECT name,timestamp FROM templates ORDER BY name WHERE name LIKE ?%", dir)
-        c.execute("SELECT name,timestamp FROM templates WHERE name LIKE ?", ('%{}%'.format(dir),))
+        # c.execute("SELECT name,timestamp FROM templates ORDER BY name WHERE path=?", dir)
+        c.execute("SELECT name,timestamp FROM templates WHERE path=?", (dir,))
         rows = c.fetchall()
         print(rows)
+
+        c.execute("SELECT path FROM templates WHERE path LIKE ? AND path NOT LIKE ?", 
+                       	('%{}%'.format(dir), '%{}%/%'.format(dir),))
+        paths = c.fetchall()
+        p = sorted(set([ path[0] for path in paths]))
+        print(p)
+
         conn.commit()
         conn.close()
-        return render_template('list.html', nb=len(rows), rows=rows, root=request.url_root)
+        return render_template('list.html', nb=len(rows), rows=rows, paths=p, root=request.url_root)
     except:
         return ('<html><body><h2>Internal Error</h2></body></html>')
 
