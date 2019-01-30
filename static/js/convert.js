@@ -3,6 +3,7 @@ $(document).ready(function(){
         $('#template').val('');
         $('#render').val('');
         $('#values').val('');
+        $('#sql_template_name').val('');
         $('#render').html('');
     });
 
