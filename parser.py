@@ -56,7 +56,7 @@ def sqlite2csv(csv_file):
         with open(csv_file, 'w+') as f:
            writer = csv.writer(f)
            print(csv_file)
-           writer.writerow(['path', 'name', 'template', 'params', 'timestamp'])
+           writer.writerow(['name', 'template', 'params', 'timestamp'])
            for row in cursor:
                print(row[0])
                writer.writerow(row)
@@ -69,18 +69,6 @@ def sqlite2csv(csv_file):
     return rc
 
 
-# from /A/B/C/E return path /A/B/C and entry E
-def extract_path_and_entry (name):
-    try:
-        path, sql_template_name =  name.rsplit('/', 1)
-    except:
-        path = ''
-        sql_template_name = name
-    if not path.startswith('/'):
-        path = '/' + path
-    return path, sql_template_name
-
-
 # ---------------
 # home page: display a demo pattern
 # ---------------
@@ -91,14 +79,13 @@ def home():
 # ---------------
 # SQL delete entry in template table
 # ---------------
-@app.route('/delete/<path:template_full_name>')
+@app.route('/delete/<path:template_path>')
 def delete(sql_template_name):
-    path, template_name = extract_path_and_entry(template_full_name)
-    print("delete:", path, template_name)
+    print("delete:", template_path)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("DELETE FROM templates WHERE name=? AND path=?", (template_name, path,))
+        c.execute("DELETE FROM templates WHERE name=?", (template_path,))
         conn.commit()
         conn.close()
         return name_list()
@@ -111,12 +98,12 @@ def delete(sql_template_name):
 # ---------------
 @app.route('/rename_to', methods=['POST'])
 def renameto():
-     print("rename from :", request.form['from'], "to", request.form['to'], "path is",  request.form['path'])
+     print("rename from :", request.form['from'], "to", request.form['to'] )
      try:
          conn = sqlite3.connect(SQL_FILE)
          c = conn.cursor()
-         c.execute("UPDATE templates SET name=? WHERE name=? AND path=?", 
-                       (request.form['to'], request.form['from'], request.form['path']))
+         c.execute("UPDATE templates SET name=? WHERE name=?", 
+                       (request.form['to'], request.form['from']))
          conn.commit()
          conn.close()
          return name_list()
@@ -129,21 +116,19 @@ def renameto():
 # ---------------
 # load: read an entry and display it
 # ---------------
-@app.route('/load/<path:template_full_name>')
-def load(template_full_name):
-    print("load: full name", template_full_name)
-    path, template_name = extract_path_and_entry(template_full_name)
-    print("load: path", path, "entry:", template_name)
+@app.route('/load/<path:template_path>')
+def load(template_path):
+    print("load: path name", template_path)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        c.execute("SELECT * FROM templates WHERE name=? AND path=?", (template_name, path))
+        c.execute("SELECT * FROM templates WHERE name=?", (template_path,))
         row = c.fetchone()
         # found ? 
         if row is None:
-           return render_template('not_found.html', path=path, key=template_name)
+           return render_template('not_found.html', key=template_path)
         # assign variables to row
-        (path, template_name, template, values, dummytime) = row
+        (template_name, template, values, dummytime) = row
         # print(template_name, template, values, dummytime)
         conn.commit()
         conn.close()
@@ -152,7 +137,6 @@ def load(template_full_name):
                                 template=template, 
                                 values=values, 
                                 sql_template_name=template_name,
-				path=path,
                                 link = request.base_url,
                                 custom_filters=get_custom_filters_description())
     except sqlite3.Error as er:
@@ -162,6 +146,7 @@ def load(template_full_name):
 
 # ---------------
 # list: display table template content
+# populate data for the template list.html
 # ---------------
 @app.route('/list/<path:dir>', methods=['GET', 'POST'])
 @app.route('/list/', methods=['GET', 'POST'], defaults={'dir': ''} )
@@ -222,26 +207,21 @@ def send_csv():
 # ---------------
 @app.route('/save', methods=['GET', 'POST'])
 def save():
-    print("save entry", request.form['path'], ":", request.form['sql_template_name'], " into", SQL_FILE)
+    print("save entry", request.form['sql_template_name'], " into", SQL_FILE)
     try:
         db_key = request.form['sql_template_name']
-        path = request.form['path']
-        if not path.startswith('/'):
-           path = '/' + path
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
         # update the SQL entry 
-        c.execute("INSERT OR REPLACE INTO templates (path, name, template, params) VALUES (?, ?, ?, ?)", 
-                      (  request.form['path'], 
-                         request.form['sql_template_name'], 
+        c.execute("INSERT OR REPLACE INTO templates (name, template, params) VALUES (?, ?, ?)", 
+                      (  request.form['sql_template_name'], 
                          request.form['template'], 
                          request.form['values']) )
         conn.commit()
         conn.close()
-        print("entry {}/{} updated".format(path, db_key))
+        print("entry {} updated".format(db_key))
         # display the same page
-        full_name = path + '/' + db_key
-        return load(full_name)
+        return load(db_key)
     except sqlite3.Error as er:
         print( 'er:', er.message)
         return "Syntax error in SQL"
@@ -256,7 +236,6 @@ def convert():
 
     # Load custom filters
     custom_filters = get_custom_filters_entrypoints()
-    # app.logger.debug('Add the following customer filters to Jinja environment: %s' % ', '.join(custom_filters.keys()))
     jinja2_env.filters.update(custom_filters)
 
     # Load the template

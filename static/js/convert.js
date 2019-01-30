@@ -12,11 +12,10 @@ $(document).ready(function(){
             template: $('#template').val(),
             values: $('#values').val(),
             sql_template_name: $('#sql_template_name').val()
-            path: $('#path').val()
         }).done(function(response) {
             // Display the answer
             $('#render').html("template saved");
-            window.location.replace("/load/" + $('#path').val + '/' + $('#sql_template_name').val())
+            window.location.replace("/load/" + $('#sql_template_name').val())
         });
     });
 
