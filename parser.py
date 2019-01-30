@@ -47,6 +47,47 @@ def get_custom_filters_entrypoints():
     return custom_filters_ep
 
 
+# Return the path string from an array (items can be empty)
+def join_paths(*paths):
+   return '/'.join(filter(None, *paths))
+
+
+# ---------------
+# SQL unitary requests : delete, rename and save to csv
+# ---------------
+def delete(name):
+    print("delete item:", name)
+    try:
+        conn = sqlite3.connect(SQL_FILE)
+        c = conn.cursor()
+        c.execute("DELETE FROM templates WHERE name=?", (name,))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.Error as er:
+        print( 'er:', er.message)
+        return "Syntax error in SQL"
+
+
+def renameto(name_from, name_to, path):
+     print("rename from :", name_from, "to", name_to, "in dir", path )
+     print("RENAME", join_paths ((path,name_from)), "to", join_paths ((path,name_to)) )
+     try:
+         conn = sqlite3.connect(SQL_FILE)
+         c = conn.cursor()
+         c.execute("UPDATE templates SET name=? WHERE name=?", 
+                       (
+                        join_paths ((path,name_to)), join_paths ((path,name_from))
+                       ) )
+
+         conn.commit()
+         conn.close()
+         return True
+     except sqlite3.Error as er:
+         print( 'er:', er.message)
+         return "Syntax error in SQL"
+
+
 def sqlite2csv(csv_file):
     rc = False
     try:
@@ -75,42 +116,6 @@ def sqlite2csv(csv_file):
 @app.route("/")
 def home():
     return render_template('index.html', flavour="index", custom_filters=get_custom_filters_description())
-
-# ---------------
-# SQL delete entry in template table
-# ---------------
-@app.route('/delete/<path:template_path>')
-def delete(sql_template_name):
-    print("delete:", template_path)
-    try:
-        conn = sqlite3.connect(SQL_FILE)
-        c = conn.cursor()
-        c.execute("DELETE FROM templates WHERE name=?", (template_path,))
-        conn.commit()
-        conn.close()
-        return name_list()
-    except sqlite3.Error as er:
-        print( 'er:', er.message)
-        return "Syntax error in SQL"
-
-# ---------------
-# SQL rename entry
-# ---------------
-@app.route('/rename_to', methods=['POST'])
-def renameto():
-     print("rename from :", request.form['from'], "to", request.form['to'] )
-     try:
-         conn = sqlite3.connect(SQL_FILE)
-         c = conn.cursor()
-         c.execute("UPDATE templates SET name=? WHERE name=?", 
-                       (request.form['to'], request.form['from']))
-         conn.commit()
-         conn.close()
-         return name_list()
-     except sqlite3.Error as er:
-         print( 'er:', er.message)
-         return "Syntax error in SQL"
-
 
 
 # ---------------
@@ -145,37 +150,86 @@ def load(template_path):
 
 
 # ---------------
-# list: display table template content
-# populate data for the template list.html
+# list: manage table template content
+#   - populate data for the template list.html (GET)
+#   - rename and delete database entries (POST)
 # ---------------
-@app.route('/list/<path:dir>', methods=['GET', 'POST'])
-@app.route('/list/', methods=['GET', 'POST'], defaults={'dir': ''} )
-@app.route('/list', methods=['GET', 'POST'], defaults={'dir': ''} )
-def name_list(dir):
-    print("list dir=", dir)
-    try: 
-       previous_dir, dummy = dir.rsplit('/', 1)
-    except:
-       previous_dir = ''
-    print("previous_path", previous_dir, "len:", len(previous_dir))
+@app.route('/list/<path:list_path>', methods=['GET', 'POST'])
+@app.route('/list/', defaults={'list_path': ''},  methods=['GET', 'POST']  )
+@app.route('/list',  defaults={'list_path': ''} )
+def name_list(list_path):
+    print("list path=", list_path)
+
+    # POST method, react to action (delete or rename)
+    # then execute the get request
+    if request.method == 'POST':
+        print( "request", request.form['action'] )
+        if request.form['action'] == "delete":
+              delete(request.form['name'])
+        if request.form['action'] == "rename":
+              renameto (request.form['entry'], request.form['to'], request.form['path'])
+
+
     try:
+        # now select 
+        #       - all entries that match "{{path}}/*" in request 1
+        #       - paths that match "{{path}}/*/"      in request 2
+
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
-        # c.execute("SELECT name,timestamp FROM templates ORDER BY name WHERE path=?", dir)
-        c.execute("SELECT name,timestamp FROM templates WHERE path=?", (dir,))
-        rows = c.fetchall()
-        print(rows)
+        c.execute("""
+                     SELECT name,timestamp 
+                            FROM templates 
+                            WHERE     name LIKE ?
+                                  AND name NOT LIKE ?
+                  """, 
+                                ('{}/%'.format(list_path),  '{}/%/%'.format(list_path)) 
+                       if list_path!=''
+                       else     ( '%', '%/%' ) 
+                  )
+        # reformat output into hash (remember name is a SQL key)
+        # key is the short_name (is uniq in a defined path) 
+        # may be sorted inside list.html
+        entries = {}
+        for row in c:
+            try:
+                full_path, relative_name = row[0].rsplit("/", 1)
+            except:
+                full_path, relative_name = '', row[0]
+            entries[relative_name]  = { 'name': row[0], 'path': full_path, 'timestamp': row[1] } 
+        # print("hash entries:", entries)
 
-        c.execute("SELECT path FROM templates WHERE path LIKE ? AND path NOT LIKE ?", 
-                       	('%{}/%'.format(dir), '%{}/%/%'.format(dir),))
-        paths = c.fetchall()
-        p = sorted(set([ path[0] for path in paths]))
-        print(p)
+        # parse all paths and build the current dir structure
+        c.execute("""
+                     SELECT name 
+                             FROM templates 
+                             WHERE name LIKE ?
+                  """, 
+                       	( '{}/%/%'.format(list_path) if list_path!='' else '%/%', ))
+        paths = {}
+        if list_path!='':
+            backpath = join_paths (list_path.split('/')[:-1])
+            print("backpatrh: ", backpath)
+            paths['/']  = { 'link': '' }
+            paths['..'] = { 'link': backpath }
+        for row in c:
+           relative_path = row[0][len(list_path):]
+           if relative_path[0]=='/':
+               relative_path = relative_path[1:]
+           short_path = relative_path.split('/')[0]
+           paths[short_path]  = { 'link': join_paths((list_path, short_path)) } 
+        print (paths)
 
+	# close SQL connectore and return list
         conn.commit()
         conn.close()
-        return render_template('list.html', nb=len(rows), rows=rows, paths=p, current_path=dir, previous_path=previous_dir, root=request.url_root)
-    except:
+        return render_template('list.html', 
+                               nb=len(entries), entries=entries, 
+                               paths=paths, 
+                               current_path=list_path,
+                               root=request.url_root)
+    except Exception as e:
+        print( "Exception {}".format(e.args) )
         return ('<html><body><h2>Internal Error</h2></body></html>')
 
 

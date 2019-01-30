@@ -74,24 +74,23 @@
                         <i class="glyphicon glyphicon-download-alt"> </i> &nbsp; To Clipboard
                     </button>
             </div>
-            <div class="col-md-6">
-		  <br>
-                  <button type="button" class="btn btn-danger" style="width:100px" id="clear" value="Clear" />
-                              <i class="glyphicon glyphicon-erase"> </i> &nbsp; Clear
-                  </button>
-            </div>
-            <div class="col-md-6">
-                  <br>
+            <div class="col-md-6" style="margin-top:36px">
                   <button type="button" class="btn btn-primary" style="width:100px" id="save" value="Save">
                               <i class="glyphicon glyphicon-save"> </i> &nbsp; Save
-                   </button>
-		    &nbsp;Path: <input type="text" id="sql_template_name" value=
-                    {% if flavour=="load" %}"{{ sql_template_name }}" {% else %}"demo/y_uniq_name"{% endif %}
-                                 style="width:200px" />
-                     <button type="button" class="btn btn-info pull-right" style="width:125px" 
+                  </button>
+		    &nbsp;to path: 
+                   <input type="text" id="sql_template_name" 
+                          value= {% if flavour=="load" %}"{{ sql_template_name }}" {% else %}"demo/my uniq name"{% endif %}
+                          style="width: calc(98% - 150px)" />
+            </div>
+            <div class="col-md-6" style="margin-top:12px">
+                     <button type="button" class="btn btn-info" style="width:100px" 
                                  id="list" value="List" onClick="location.href='/list'">
                          <i class="glyphicon glyphicon-search"> </i> &nbsp; List
                      </button>
+                  <button type="button" class="btn btn-danger pull-right" style="width:80px" id="clear" value="Clear" />
+                              <i class="glyphicon glyphicon-erase"> </i> &nbsp; Clear
+                  </button>
             </div>
   
         </div>

@@ -5,10 +5,14 @@
 
 {% block body %}
 
-<form name="data" method="POST" action="/rename_to">
-<input type="hidden" name="from" />
+<form name="action_data" method="POST" action="/list/{{ current_path }}">
+<input type="hidden" name="action" />
+<input type="hidden" name="name"/>
+<input type="hidden" name="entry"/>
 <input type="hidden" name="to" />
+<input type="hidden" name="path" />
 </form>
+
 
      <form class="container">
          <H2>list of known entries</H2>
@@ -18,18 +22,10 @@
                     <div class="row" style="background-color: #f0f0f0;">
                          <div class="col-md-4"> Path</div>
                     </div>
-                {% if previous_path | length > 1  %}
+                {% for path in paths.keys() | sort %}
                     <div class="row">
                          <div class="col-md-4">
-                                 <a href="..">..</A>
-                         </div>
-                    </div>
-                {% endif %}
-
-                {% for path in paths %}
-                    <div class="row">
-                         <div class="col-md-4">
-                                 <a href="/list{{ path }}"> {{ path }}</A>
+                                 <a href="/list/{{ paths[path]['link'] }}"> {{ path }}</A>
                          </div>
                     </div>
                 {% endfor %}
@@ -44,17 +40,19 @@
                          <div class="col-md-2"> </div>
                     </div>
 
-                {% for row in rows %}
+                {% for entry in entries.keys() | sort %}
                     <div class="row">
                          <div class="col-md-4">
-                                 <a href="/load/{{ current_path }}/{{ row[0] }}" class="edithide{{loop.index}}" id="entry{{loop.index}}">{{ row[0] }}</A>
-                                 <input type="text" id="new_entry{{loop.index}}" class="editshow{{loop.index}}" value="{{row[0]}}" />
+                                 <a href="/load/{{ entries[entry]['name'] }}" class="edithide{{loop.index}}" id="entry{{loop.index}}">
+                                    {{ entry }}
+                                 </A>
+                                 <input type="text" id="new_entry{{loop.index}}" class="editshow{{loop.index}}" value="{{entry}}" />
                          </div>
-                         <div class="col-md-3">{{ row[1] }}</div>
+                         <div class="col-md-3">{{ entries[entry]['timestamp'] }}</div>
                          <div class="col-md-2" id="menu{{loop.index}}">
                                    <button type="button" class="btn btn-danger btn-xs edithide" 
 				           id="delete{{loop.index}}" value="Delete"
-                                           onClick="location.href='/delete/{{ current_path }}/{{row[0]}}'">
+                                           onClick="doDelete( {{loop.index}}, '{{ entries[entry]['name'] }}' )">
                                        <i class="glyphicon glyphicon-trash"> </i>
                                    </button>
                                    <button type="button" class="btn btn-primary btn-xs pressme{{loop.index}} edithide"
@@ -66,7 +64,7 @@
                                        <i class="glyphicon glyphicon-remove"> </i>
                                    </button>
                                    <button type="button" class="btn btn-success btn-xs pressme{{loop.index}} editshow{{loop.index}}"
-                                           id="do_{{loop.index}}" onclick="doRename({{loop.index}})">
+                                           id="do_{{loop.index}}" onclick="doRename({{loop.index}}, '{{ entry }}')">
                                        <i class="glyphicon glyphicon-ok"> </i>
                                    </button>
                          </div>
@@ -92,7 +90,7 @@
          </div>
        </form>
        <script>
-            {% for row in rows %}
+            {% for entry in entries %}
                $(".editshow{{loop.index}}").hide();
                // hide/show all grid buttons
                $(".pressme{{loop.index}}").click( function() {
@@ -102,12 +100,21 @@
                   } );
             {% endfor %}
             // send rename_to POST request. Copy values into hidden form and apply
-            function doRename(row) {
-                 document.data.from.value = document.getElementById("entry" + row).innerText;
-                 document.data.to.value   = document.getElementById("new_entry" + row).value;
-                 document.data.path.value = {{ current_path }}
-                 document.data.submit();
-            }
+            function doRename(row, from) {
+                 document.action_data.action.value = "rename";
+                 document.action_data.entry.value = from;
+                 document.action_data.to.value   = document.getElementById("new_entry" + row).value;
+                 document.action_data.path.value  = "{{ current_path }}"
+                 document.action_data.submit();
+            };
+	   // send delete POST request using full name and current_path (for new list)
+           function doDelete(row, full_name) {
+                 document.action_data.action.value = "delete";
+                 document.action_data.name.value = full_name;
+                 document.action_data.path.value  = "{{ current_path }}";
+                 document.action_data.submit();
+           };
+
        </script>
 
 {% endblock %}
