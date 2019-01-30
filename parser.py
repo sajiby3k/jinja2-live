@@ -56,7 +56,7 @@ def join_paths(*paths):
 # SQL unitary requests : delete, rename and save to csv
 # ---------------
 def delete(name):
-    print("delete item:", name)
+    # print("delete item:", name)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
@@ -70,8 +70,7 @@ def delete(name):
 
 
 def renameto(name_from, name_to, path):
-     print("rename from :", name_from, "to", name_to, "in dir", path )
-     print("RENAME", join_paths ((path,name_from)), "to", join_paths ((path,name_to)) )
+     # print("rename from :", name_from, "to", name_to, "in dir", path )
      try:
          conn = sqlite3.connect(SQL_FILE)
          c = conn.cursor()
@@ -123,7 +122,7 @@ def home():
 # ---------------
 @app.route('/load/<path:template_path>')
 def load(template_path):
-    print("load: path name", template_path)
+    # print("load: path name", template_path)
     try:
         conn = sqlite3.connect(SQL_FILE)
         c = conn.cursor()
@@ -158,12 +157,11 @@ def load(template_path):
 @app.route('/list/', defaults={'list_path': ''},  methods=['GET', 'POST']  )
 @app.route('/list',  defaults={'list_path': ''} )
 def name_list(list_path):
-    print("list path=", list_path)
+    # print("list path=", list_path)
 
     # POST method, react to action (delete or rename)
     # then execute the get request
     if request.method == 'POST':
-        print( "request", request.form['action'] )
         if request.form['action'] == "delete":
               delete(request.form['name'])
         if request.form['action'] == "rename":
@@ -209,7 +207,6 @@ def name_list(list_path):
         paths = {}
         if list_path!='':
             backpath = join_paths (list_path.split('/')[:-1])
-            print("backpatrh: ", backpath)
             paths['/']  = { 'link': '' }
             paths['..'] = { 'link': backpath }
         for row in c:
@@ -218,7 +215,6 @@ def name_list(list_path):
                relative_path = relative_path[1:]
            short_path = relative_path.split('/')[0]
            paths[short_path]  = { 'link': join_paths((list_path, short_path)) } 
-        print (paths)
 
 	# close SQL connectore and return list
         conn.commit()
@@ -261,7 +257,7 @@ def send_csv():
 # ---------------
 @app.route('/save', methods=['GET', 'POST'])
 def save():
-    print("save entry", request.form['sql_template_name'], " into", SQL_FILE)
+    # print("save entry", request.form['sql_template_name'], " into", SQL_FILE)
     try:
         db_key = request.form['sql_template_name']
         conn = sqlite3.connect(SQL_FILE)
@@ -273,7 +269,7 @@ def save():
                          request.form['values']) )
         conn.commit()
         conn.close()
-        print("entry {} updated".format(db_key))
+        # print("entry {} updated".format(db_key))
         # display the same page
         return load(db_key)
     except sqlite3.Error as er:
@@ -284,8 +280,9 @@ def save():
 # ---------------
 # convert: render template
 # ---------------
-@app.route('/convert', methods=['GET', 'POST'])
+@app.route('/convert', methods=['POST'])
 def convert():
+    print( "convert")
     jinja2_env = Environment()
 
     # Load custom filters
