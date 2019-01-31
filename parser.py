@@ -226,7 +226,7 @@ def name_list(list_path):
                                root=request.url_root)
     except Exception as e:
         print( "Exception {}".format(e.args) )
-        return ('<html><body><h2>Internal Error</h2></body></html>')
+        return ('<html><body><h2>Internal Error</h2>{}</body></html>'.format(e.args))
 
 
 # ---------------
@@ -235,7 +235,6 @@ def name_list(list_path):
 @app.route('/csv', methods=['GET', 'POST'])
 def send_csv():
     tmp_file = tempfile.gettempdir() + "/db.csv"
-    print(tmp_file)
     if  sqlite2csv(tmp_file):
         with open(tmp_file) as fp:
             csv = fp.read()
@@ -282,7 +281,6 @@ def save():
 # ---------------
 @app.route('/convert', methods=['POST'])
 def convert():
-    print( "convert")
     jinja2_env = Environment()
 
     # Load custom filters
@@ -302,13 +300,13 @@ def convert():
             try:
                 values = json.loads(request.form['values']) if request.form['values'] else {}
             except ValueError as e:
-                return "Value error in JSON: {0}".format(e)
+                return "Invalid JSON syntax in data:\n----------------------------\n{0}".format(e)
     # Check YAML for errors
     elif request.form['input_type'] == "yaml":
             try:
-                values = yaml.load(request.form['values']) if request.form['values'] else {}
-            except (ValueError, yaml.parser.ParserError, TypeError) as e:
-                return "Value error in YAML: {0}".format(e)
+                values = yaml.safe_load(request.form['values']) if request.form['values'] else {}
+            except yaml.YAMLError as exc:
+                return "Invalid YAML syntax in data:\n----------------------------\n" + str(exc)
     else:
             return "Undefined input_type: {0}".format(request.form['input_type'])
 
