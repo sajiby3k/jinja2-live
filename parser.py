@@ -99,7 +99,7 @@ def sqlite2csv(csv_file):
            writer.writerow(['name', 'template', 'params', 'timestamp'])
            for row in cursor:
                print(row[0])
-               writer.writerow(row)
+               writer.writerow([ unicode(cell).encode('utf-8')  for cell in row])
         rc = True
     except:
         rc=False
