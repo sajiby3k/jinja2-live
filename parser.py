@@ -286,6 +286,7 @@ def convert():
     # Load custom filters
     custom_filters = get_custom_filters_entrypoints()
     jinja2_env.filters.update(custom_filters)
+    jinja2_env.filters['zip'] = zip
 
     # Load the template
     try:
