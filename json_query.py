@@ -2,6 +2,8 @@
 #
 # add json_query filters to jinja2-live parser
 
+from jinja2 import Environment, meta, exceptions
+
 
 try:
     import jmespath

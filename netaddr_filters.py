@@ -338,6 +338,7 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
 
 
 def ipwrap(value, query = ''):
+    """ wrap ipv6 addresses into brackets """
     try:
         if isinstance(value, (list, tuple)):
             _ret = []
@@ -360,10 +361,12 @@ def ipwrap(value, query = ''):
 
 
 def ipv4(value, query = ''):
+    """ alias for ipaddr('ipv4') """
     return ipaddr(value, query, version = 4, alias = 'ipv4')
 
 
 def ipv6(value, query = ''):
+    """ alias for ipaddr('ipv6') """
     return ipaddr(value, query, version = 6, alias = 'ipv6')
 
 
@@ -491,6 +494,7 @@ mac_linux.word_fmt = '%.2x'
 
 
 def macaddr(value, query = ''):
+    """ convert MAC address to various fromat """
     return hwaddr(value, query, alias = 'macaddr')
 
 

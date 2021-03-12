@@ -16,8 +16,8 @@ import os
 import csv
 import tempfile
 
-# local modules
-CUSTOM_MODULES = ('netaddr_filters', 'json_query')
+# local modules (no extensions)
+CUSTOM_MODULES = ('netaddr_filters', 'json_query', 'thin_filters')
 import importlib
 OBJS = [importlib.import_module(custom_filter) for custom_filter in CUSTOM_MODULES]
 
@@ -331,6 +331,7 @@ if __name__ == "__main__":
     file_handler.setFormatter(logging.Formatter(config.LOGGING_FORMAT))
     file_handler.setLevel(logging.__getattribute__(config.LOGGING_LEVEL))
     app.logger.addHandler(file_handler)
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0    # disable caching
 
     app.run(
         host=config.HOST,
