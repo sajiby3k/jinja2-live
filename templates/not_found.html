@@ -14,13 +14,13 @@
        </div>
        <div class="row">
             <div class="col-md-2">
-                   <button type="button" class="btn btn-primary btn-xs" id="home" onClick="location.href='/'">
+                   <button type="button" class="btn btn-primary btn-xs" id="home" onClick="location.href='{{ url_for('home') }}'">
                                <i class="glyphicon glyphicon-home"></i> &nbsp; Return
                   </button>
             </div>
             <div class="col-md-2">
                      <button type="button" class="btn btn-info btn-xs"
-                                 id="list" value="List" onClick="location.href='/list'">
+                                 id="list" value="List" onClick="location.href='{{ url_for('name_list') }}'">
                          <i class="glyphicon glyphicon-search"> </i> &nbsp; List
             </div>
        </div>
