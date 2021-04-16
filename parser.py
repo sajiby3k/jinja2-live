@@ -5,7 +5,9 @@ from flask import Flask, render_template, request, redirect, url_for, Response
 from jinja2 import Environment, meta, exceptions
 from random import choice
 import inspect
-from cgi import escape
+#escape from cgi is desricated soon; instead use escape from html
+#from cgi import escape
+from html import escape
 import logging
 import logging.handlers
 import json
@@ -21,8 +23,11 @@ CUSTOM_MODULES = ('netaddr_filters', 'json_query', 'thin_filters')
 import importlib
 OBJS = [importlib.import_module(custom_filter) for custom_filter in CUSTOM_MODULES]
 
+#When running under gunicorn or wsgi with apache/nginx; it expects  absolute file name.
+#Relative filename does not work. Use pyhton to use relative filename instead.
+#SQL_FILE = 'jinja_db.sqlite'
+SQL_FILE = os.path.join(os.path.dirname(__file__), 'jinja_db.sqlite')
 
-SQL_FILE = 'jinja_db.sqlite'
 app = Flask(__name__)
 
 
