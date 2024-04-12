@@ -315,6 +315,7 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
         except:
             return False
 
+    # -----------------------------------------
     # add by PJO: succ, prev and peer
     elif query == 'succ' or query =='prev':
       offset = 1 if query=='succ' else -1
@@ -322,7 +323,8 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
           n = netaddr.IPNetwork( '{}/{}'.format(netaddr.IPAddress(v.value+offset), v.prefixlen) )
           # valid only if both address are in the same network 
           #            and succ or prev is neither a network or a broadcast address 
-          if n.network==v.network and n.ip!=n.broadcast and  n.ip!=n.network :
+          #                (check only if  prefix is not /31 or /127)
+          if n.network==v.network and (v.size==2 or n.ip!=n.broadcast and n.ip!=n.network):
               return n
           else:
               return False
@@ -330,18 +332,16 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
           return False
 
     elif query == 'peer':
-       offset = 0
-       PLENS = { 6: { 'range4': 126, 'range2': 127 },
-                 4: { 'range4': 30,  'range2': 31  } }
-       if v.prefixlen==PLENS[v.version]['range4']:
-            offset = 3 - 2 * (v.value % 4)
-       elif  v.prefixlen==PLENS[v.version]['range2']:
-           offset  = 1 - 2 * (v.value % 2)
-       if offset==1 or offset==-1:
-           return netaddr.IPNetwork( '{}/{}'.format(netaddr.IPAddress(v.value+offset), v.prefixlen) )
+       if v.size==4:
+             offset = 3 - 2 * (v.value % 4)
+       elif v.size==2:
+             offset  = 1 - 2 * (v.value % 2)
        else:
-           return False
+             return False
+       return netaddr.IPAddress(v.value+offset)
+
     # end of updates by PJO: succ, prev and peer
+    # -----------------------------------------
 
     else:
         try:
