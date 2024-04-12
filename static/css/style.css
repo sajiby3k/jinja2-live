@@ -5,7 +5,8 @@
 #render {
     width: 100%;
     min-height: 300px;
-    resize: vertical;
+    # resize: vertical;
+    resize: both;
     font-family: "Courier New", Courier, monospace;
     font-size: small;
     border: 1px solid #ccc;

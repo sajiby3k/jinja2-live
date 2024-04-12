@@ -1,6 +1,7 @@
 # From netadd-filters.py (c) 2014, Maciej Delmanowski <drybjed@gmail.com>
 #
 # add netaddr filters to jinja2-live parser
+# from https://github.com/drybjed/ansible-ipaddr-filter/blob/master/filter_plugins/ipaddr.py
 
 
 try:
@@ -18,7 +19,8 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
                     'network', 'subnet', 'prefix', 'broadcast', 'netmask', 'hostmask', \
                     'unicast', 'multicast', 'private', 'public', 'loopback', 'lo', \
                     'revdns', 'wrap', 'ipv6', 'v6', 'ipv4', 'v4', 'cidr', 'net', \
-                    'hostnet', 'router', 'gateway', 'gw', 'host/prefix', 'address/prefix' ]
+                    'hostnet', 'router', 'gateway', 'gw', 'host/prefix', 'address/prefix' \
+                    'succ', 'prev', 'peer' ]
 
     if not value:
         return False
@@ -312,6 +314,34 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
                 return value
         except:
             return False
+
+    # add by PJO: succ, prev and peer
+    elif query == 'succ' or query =='prev':
+      offset = 1 if query=='succ' else -1
+      try:
+          n = netaddr.IPNetwork( '{}/{}'.format(netaddr.IPAddress(v.value+offset), v.prefixlen) )
+          # valid only if both address are in the same network 
+          #            and succ or prev is neither a network or a broadcast address 
+          if n.network==v.network and n.ip!=n.broadcast and  n.ip!=n.network :
+              return n
+          else:
+              return False
+      except:
+          return False
+
+    elif query == 'peer':
+       offset = 0
+       PLENS = { 6: { 'range4': 126, 'range2': 127 },
+                 4: { 'range4': 30,  'range2': 31  } }
+       if v.prefixlen==PLENS[v.version]['range4']:
+            offset = 3 - 2 * (v.value % 4)
+       elif  v.prefixlen==PLENS[v.version]['range2']:
+           offset  = 1 - 2 * (v.value % 2)
+       if offset==1 or offset==-1:
+           return netaddr.IPNetwork( '{}/{}'.format(netaddr.IPAddress(v.value+offset), v.prefixlen) )
+       else:
+           return False
+    # end of updates by PJO: succ, prev and peer
 
     else:
         try:

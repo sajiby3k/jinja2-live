@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from flask import Flask, render_template, request, redirect, url_for, Response
+from flask import Flask, render_template, request, redirect, url_for, Response, send_from_directory
 from jinja2 import Environment, meta, exceptions
 from random import choice
 import inspect
@@ -24,6 +24,11 @@ OBJS = [importlib.import_module(custom_filter) for custom_filter in CUSTOM_MODUL
 
 SQL_FILE = 'jinja_db.sqlite'
 app = Flask(__name__)
+
+# add favicon
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.root_path, 'jinja2.ico',mimetype='image/vnd.microsoft.icon')
 
 
 # ---------------
@@ -107,6 +112,7 @@ def sqlite2csv(csv_file):
     conn.commit()
     conn.close()
     return rc
+
 
 
 # ---------------
@@ -321,7 +327,8 @@ def convert():
     if bool(int(request.form['showwhitespaces'])):
         rendered_jinja2_tpl = rendered_jinja2_tpl.replace(' ', u'\u02d9')
 
-    return escape(rendered_jinja2_tpl)
+    # return escape(rendered_jinja2_tpl)
+    return rendered_jinja2_tpl
 
 
 if __name__ == "__main__":
