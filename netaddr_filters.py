@@ -147,9 +147,9 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
                 return str(v)
 
     elif query == 'type':
-        if v.size == 1:
+        if v.size == 2:
             return 'address'
-        if v.size > 1:
+        if v.size > 2:
             if v.ip != v.network:
                 return 'address'
             else:
@@ -172,26 +172,28 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
         return v.size
 
     elif query in [ 'address', 'ip' ]:
-        if v.size == 1:
+        if v.size == 2:
             return str(v.ip)
-        if v.size > 1:
+        if v.size > 2:
             if v.ip != v.network:
                 return str(v.ip)
 
     elif query == 'host':
-        if v.size == 1:
+        if v.size == 2:
             return str(v)
-        elif v.size > 1:
+        elif v.size > 2:
             if v.ip != v.network:
                 return str(v.ip) + '/' + str(v.prefixlen)
 
     elif query == 'net':
-        if v.size > 1:
+        if v.size > 2:
             if v.ip == v.network:
                 return str(v.network) + '/' + str(v.prefixlen)
 
     elif query in [ 'hostnet', 'router', 'gateway', 'gw', 'host/prefix', 'address/prefix' ]:
-        if v.size > 1:
+        if v.size == 2:
+            return str(v.ip) + '/' + str(v.prefixlen)
+        elif v.size > 2:
             if v.ip != v.network:
                 return str(v.ip) + '/' + str(v.prefixlen)
 
@@ -209,7 +211,7 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
         return int(v.prefixlen)
 
     elif query == 'broadcast':
-        if v.size > 1:
+        if v.size > 2:
             return str(v.broadcast)
 
     elif query == 'netmask':
