@@ -2,7 +2,7 @@
 from __future__ import absolute_import, print_function
 
 from flask import Flask, render_template, request, redirect, url_for, Response, send_from_directory
-from jinja2 import Environment, meta, exceptions
+from jinja2 import Environment, meta, exceptions, TemplateError
 from random import choice
 import inspect
 from cgi import escape
@@ -56,6 +56,22 @@ def get_custom_filters_entrypoints():
 def join_paths(*paths):
    return '/'.join(filter(None, *paths))
 
+
+# get line number in a template
+# from https://stackoverflow.com/questions/26967433
+from sys import exc_info
+
+def jinja2_template_error_lineno():
+    type, value, tb = exc_info()
+    if not issubclass(type, TemplateError):
+        return None
+    if hasattr(value, 'lineno'):
+        # in case of TemplateSyntaxError
+        return value.lineno
+    while tb:
+        if tb.tb_frame.f_code.co_filename == '<template>':
+            return tb.tb_lineno
+        tb = tb.tb_next
 
 # ---------------
 # SQL unitary requests : delete, rename and save to csv
@@ -285,6 +301,7 @@ def save():
 # ---------------
 # convert: render template
 # ---------------
+
 @app.route('/convert', methods=['POST'])
 def convert():
     jinja2_env = Environment()
@@ -298,7 +315,7 @@ def convert():
     try:
         jinja2_tpl = jinja2_env.from_string(request.form['template'])
     except (exceptions.TemplateSyntaxError, exceptions.TemplateError) as e:
-        return "Syntax error in jinja2 template: {0}".format(e)
+        return "Line {}: Syntax error in jinja2 template:\n{}".format(jinja2_template_error_lineno(), e)
 
 
     values = {}

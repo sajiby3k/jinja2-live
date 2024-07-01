@@ -1,0 +1,110 @@
+{% for vrf in vrfs %}
+
+# -----
+# policies
+# -----
+  {% for rt in (vrf.RT.imports+vrf.RT.exports) | unique %}
+set policy-options community RT-VRF-{{ vrf.name }}_{{ rt }} members target:64512:{{ rt }}
+  {%- endfor %}{# for rt in vrrfs[*].RTs.import #}
+
+set policy-options policy-statement VRF-SELECT-{{ vrf.name }} term 1 from protocol bgp
+  {%- for rt in vrf.RT.imports %}
+set policy-options policy-statement VRF-SELECT-{{ vrf.name }} term 1 from community RT-VRF-{{ vrf.name }}_{{ rt }}
+  {%- endfor %}{# for rt in vrrfs[*].RTs.import #}
+set policy-options policy-statement VRF-SELECT-{{ vrf.name }} term 1 then accept
+set policy-options policy-statement VRF-SELECT-{{ vrf.name }} term NEXT then next policy
+  {% for rt in vrf.RT.exports %}
+set policy-options policy-statement VRF-UPDATE-{{ vrf.name }} term 1 then community add RT-VRF-{{ vrf.name }}_{{ rt }}
+  {%- endfor %}{# for rt in vrrfs[*].RTs.export #}
+set policy-options policy-statement VRF-UPDATE-{{ vrf.name }} then next policy
+
+# ----
+# VRF declaration 
+# ----
+
+set routing-instances RIE-VRF-{{ vrf.name }} instance-type vrf
+set routing-instances RIE-VRF-{{ vrf.name }} route-distinguisher {{ globals.bgp.as }}:{{ vrf.RT.exports[0] }}01{{ "%02d" % site.id | int }}{{ "%02d" % globals.offset.hex }}
+set routing-instances RIE-VRF-{{ vrf.name }} routing-options maximum-prefixes {{ vrf.max_pfx }}
+set routing-instances RIE-VRF-{{ vrf.name }} routing-options maximum-prefixes threshold 80
+set routing-instances RIE-VRF-{{ vrf.name }} routing-options maximum-prefixes log-interval 86400
+
+set routing-instances RIE-VRF-{{ vrf.name }} routing-options auto-export
+
+set routing-instances RIE-VRF-{{ vrf.name }} vrf-import BGP-CT->LP
+set routing-instances RIE-VRF-{{ vrf.name }} vrf-import VRF-SELECT-{{ vrf.name }}
+set routing-instances RIE-VRF-{{ vrf.name }} vrf-import REJECT
+set routing-instances RIE-VRF-{{ vrf.name }} vrf-export VRF-UPDATE-{{ vrf.name }}
+set routing-instances RIE-VRF-{{ vrf.name }} vrf-export STATIC->BGP-CT
+set routing-instances RIE-VRF-{{ vrf.name }} vrf-export ACCEPT
+
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE type external
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE family inet unicast
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE minimum-hold-time 30
+
+# ----
+# connections
+# ----
+{% for con in vrf.connections %}
+{% set phyitf,unit = con.name.split('.') %}
+
+set interfaces {{ con.name }} description {{ con.descr if con.descr else con.name }}
+set interfaces {{ con.name }} bandwidth {{ con.bandwidth }}
+set interfaces {{ con.name }} vlan-id {{ con.vlanid if con.vlanid else unit }}
+set interfaces {{ con.name }} family inet mtu 1500
+set interfaces {{ con.name }} family inet no-redirects
+set interfaces {{ con.name }} family inet filter output GEN-CLASSIFIER-OUT
+set interfaces {{ con.name }} family inet address {{ con.address }}
+  {%- if 'input' in con.ipfix | lower %}
+set interfaces {{ con.name }} family inet sampling input
+  {%- endif %}
+  {%- if 'output' in con.ipfix | lower %}
+set interfaces {{ con.name }} family inet sampling output
+  {%- endif %}
+
+set routing-instances RIE-VRF-{{ vrf.name }} interface {{ con.name }}
+
+{% if con.bgp %}
+# --
+# BGP
+# --
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE neighbor {{ con.bgp.peer if con.bgp.peer else con.address | ipaddr('peer') }} local-address {{ con.address | ipaddr('address') }}
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE neighbor {{ con.bgp.peer if con.bgp.peer else con.address | ipaddr('peer') }} peer-as {{ con.bgp.as }} 
+  {% if con.bgp.as==65000 %}
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE neighbor {{ con.bgp.peer if con.bgp.peer else con.address | ipaddr('peer') }} as-override
+  {%- endif %}
+  {% if con.bgp.bfd %}
+set routing-instances RIE-VRF-{{ vrf.name }} protocols bgp group CPE neighbor {{ con.bgp.peer if con.bgp.peer else con.address | ipaddr('peer') }} bfd-liveness-detection minimum-interval {{ globals.bfd.interval }}
+  {%- endif %}
+{% endif %} {# BGP #}
+
+{% for route in con.statics %}
+# --
+# Static
+# --
+{% set nexthop = route.nexthop if route.nexthop else con.address | ipaddr('peer') %}
+set routing-instances {{ vrf.name }} routing-options static route {{ route.dest }} next-hop {{ nexthop }} preference {{ "250" if route.backup else "5" }}
+set routing-instances {{ vrf.name }} routing-options static route {{ route.dest }} bfd-liveness-detection minimum-interval {{ globals.bfd.interval }}
+set routing-instances {{ vrf.name }} routing-options static route {{ route.dest }} bfd-liveness-detection multiplier {{ globals.bfd.multiplier }}
+set routing-instances {{ vrf.name }} routing-options static route {{ route.dest }} bfd-liveness-detection neighbor {{ nexthop }}
+{% if route.tag %}
+set routing-instances {{ vrf.name }} routing-options static route {{ route.dest }} tag {{ route.tag }}
+{% endif %}
+{% endfor %}
+
+
+  {% if not con.custom_qos %}
+# --
+# QoS
+# --
+set class-of-service traffic-control-profiles RIE-SHAPE-{{ con.bandwidth }}-GEN-QUEUING shaping-rate {{ con.bandwidth }}
+set class-of-service traffic-control-profiles RIE-SHAPE-10m-GEN-QUEUING scheduler-map GEN-QUEUING-BENEFICIAIRE
+set interface {{ phyitf }} per-unit-scheduler
+set class-of-service interface {{ phyitf }} unit {{ unit }} output-traffic-control-profile RIE-SHAPE-{{ con.bandwidth }}-GEN-QUEUING
+set class-of-service interface {{ phyitf }} unit {{ unit }} classifiers dscp GEN-DSCP-CLASSIFIER
+   {% endif %}
+{% endfor %} {# for con in connctions #}
+
+
+{% endfor %} {# for vrf in vrfs #}
+
+
