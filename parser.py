@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, Response, 
 from jinja2 import Environment, meta, exceptions, TemplateError
 from random import choice
 import inspect
-from cgi import escape
+from html import escape
 import logging
 import logging.handlers
 import json
