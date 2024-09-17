@@ -1,6 +1,8 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+jinja_db.sqlite.Current
+jinja_db.sqlite.DEMO
 
 # C extensions
 *.so

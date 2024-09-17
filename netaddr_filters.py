@@ -1,6 +1,7 @@
 # From netadd-filters.py (c) 2014, Maciej Delmanowski <drybjed@gmail.com>
 #
 # add netaddr filters to jinja2-live parser
+# from https://github.com/drybjed/ansible-ipaddr-filter/blob/master/filter_plugins/ipaddr.py
 
 
 try:
@@ -18,7 +19,8 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
                     'network', 'subnet', 'prefix', 'broadcast', 'netmask', 'hostmask', \
                     'unicast', 'multicast', 'private', 'public', 'loopback', 'lo', \
                     'revdns', 'wrap', 'ipv6', 'v6', 'ipv4', 'v4', 'cidr', 'net', \
-                    'hostnet', 'router', 'gateway', 'gw', 'host/prefix', 'address/prefix' ]
+                    'hostnet', 'router', 'gateway', 'gw', 'host/prefix', 'address/prefix' \
+                    'succ', 'prev', 'peer' ]
 
     if not value:
         return False
@@ -145,9 +147,9 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
                 return str(v)
 
     elif query == 'type':
-        if v.size == 1:
+        if v.size == 2:
             return 'address'
-        if v.size > 1:
+        if v.size > 2:
             if v.ip != v.network:
                 return 'address'
             else:
@@ -170,26 +172,28 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
         return v.size
 
     elif query in [ 'address', 'ip' ]:
-        if v.size == 1:
+        if v.size == 2:
             return str(v.ip)
-        if v.size > 1:
+        if v.size > 2:
             if v.ip != v.network:
                 return str(v.ip)
 
     elif query == 'host':
-        if v.size == 1:
+        if v.size == 2:
             return str(v)
-        elif v.size > 1:
+        elif v.size > 2:
             if v.ip != v.network:
                 return str(v.ip) + '/' + str(v.prefixlen)
 
     elif query == 'net':
-        if v.size > 1:
+        if v.size > 2:
             if v.ip == v.network:
                 return str(v.network) + '/' + str(v.prefixlen)
 
     elif query in [ 'hostnet', 'router', 'gateway', 'gw', 'host/prefix', 'address/prefix' ]:
-        if v.size > 1:
+        if v.size == 2:
+            return str(v.ip) + '/' + str(v.prefixlen)
+        elif v.size > 2:
             if v.ip != v.network:
                 return str(v.ip) + '/' + str(v.prefixlen)
 
@@ -207,7 +211,7 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
         return int(v.prefixlen)
 
     elif query == 'broadcast':
-        if v.size > 1:
+        if v.size > 2:
             return str(v.broadcast)
 
     elif query == 'netmask':
@@ -312,6 +316,34 @@ def ipaddr(value, query = '', version = False, alias = 'ipaddr'):
                 return value
         except:
             return False
+
+    # -----------------------------------------
+    # add by PJO: succ, prev and peer
+    elif query == 'succ' or query =='prev':
+      offset = 1 if query=='succ' else -1
+      try:
+          n = netaddr.IPNetwork( '{}/{}'.format(netaddr.IPAddress(v.value+offset), v.prefixlen) )
+          # valid only if both address are in the same network 
+          #            and succ or prev is neither a network or a broadcast address 
+          #                (check only if  prefix is not /31 or /127)
+          if n.network==v.network and (v.size==2 or n.ip!=n.broadcast and n.ip!=n.network):
+              return n
+          else:
+              return False
+      except:
+          return False
+
+    elif query == 'peer':
+       if v.size==4:
+             offset = 3 - 2 * (v.value % 4)
+       elif v.size==2:
+             offset  = 1 - 2 * (v.value % 2)
+       else:
+             return False
+       return netaddr.IPAddress(v.value+offset)
+
+    # end of updates by PJO: succ, prev and peer
+    # -----------------------------------------
 
     else:
         try:

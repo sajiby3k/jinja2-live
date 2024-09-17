@@ -15,6 +15,7 @@ All you need is Python and preferably [pip](https://pypi.python.org/pypi/pip). C
 ### Clone + pip + init database
 
     $ git clone https://github.com/PJO2/jinja2-live
+    $ cd jinja2-live
     $ pip3 install -r requirements.txt
     $ python3 init_database.py
     $ python3 parser.py

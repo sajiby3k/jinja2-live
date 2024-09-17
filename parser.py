@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from flask import Flask, render_template, request, redirect, url_for, Response
-from jinja2 import Environment, meta, exceptions
+from flask import Flask, render_template, request, redirect, url_for, Response, send_from_directory
+from jinja2 import Environment, meta, exceptions, TemplateError
 from random import choice
 import inspect
-#escape from cgi is desricated soon; instead use escape from html
-#from cgi import escape
 from html import escape
 import logging
 import logging.handlers
@@ -29,6 +27,11 @@ OBJS = [importlib.import_module(custom_filter) for custom_filter in CUSTOM_MODUL
 SQL_FILE = os.path.join(os.path.dirname(__file__), 'jinja_db.sqlite')
 
 app = Flask(__name__)
+
+# add favicon
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.root_path, 'jinja2.ico',mimetype='image/vnd.microsoft.icon')
 
 
 # ---------------
@@ -56,6 +59,22 @@ def get_custom_filters_entrypoints():
 def join_paths(*paths):
    return '/'.join(filter(None, *paths))
 
+
+# get line number in a template
+# from https://stackoverflow.com/questions/26967433
+from sys import exc_info
+
+def jinja2_template_error_lineno():
+    type, value, tb = exc_info()
+    if not issubclass(type, TemplateError):
+        return None
+    if hasattr(value, 'lineno'):
+        # in case of TemplateSyntaxError
+        return value.lineno
+    while tb:
+        if tb.tb_frame.f_code.co_filename == '<template>':
+            return tb.tb_lineno
+        tb = tb.tb_next
 
 # ---------------
 # SQL unitary requests : delete, rename and save to csv
@@ -112,6 +131,7 @@ def sqlite2csv(csv_file):
     conn.commit()
     conn.close()
     return rc
+
 
 
 # ---------------
@@ -284,6 +304,7 @@ def save():
 # ---------------
 # convert: render template
 # ---------------
+
 @app.route('/convert', methods=['POST'])
 def convert():
     jinja2_env = Environment()
@@ -297,7 +318,7 @@ def convert():
     try:
         jinja2_tpl = jinja2_env.from_string(request.form['template'])
     except (exceptions.TemplateSyntaxError, exceptions.TemplateError) as e:
-        return "Syntax error in jinja2 template: {0}".format(e)
+        return "Line {}: Syntax error in jinja2 template:\n{}".format(jinja2_template_error_lineno(), e)
 
 
     values = {}
@@ -326,7 +347,8 @@ def convert():
     if bool(int(request.form['showwhitespaces'])):
         rendered_jinja2_tpl = rendered_jinja2_tpl.replace(' ', u'\u02d9')
 
-    return escape(rendered_jinja2_tpl)
+    # return escape(rendered_jinja2_tpl)
+    return rendered_jinja2_tpl
 
 
 if __name__ == "__main__":

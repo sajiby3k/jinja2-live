@@ -1,0 +1,57 @@
+globals:
+  offset:
+     dec: 100
+     hex: 64
+  bgp:
+     as: 64512
+  bfd:
+     interval:   500
+     multiplier: 3
+
+
+site:
+   id: 09
+
+vrfs:
+  - name: BENEF12
+    RT:
+       imports:  [ 1001, 2003 ]
+       exports:  [ 1001, 2004 ]
+    max_pfx: 2500
+  
+    connections: 
+     - name:       ge-0/0/1.10
+       address:    9.8.7.6/31
+       bandwidth:  10m
+       # si custom_qos est positionne, la partie QoS n.est pas appliqueE
+       custom_qos: no
+       ipfix:      [ input ]
+       bgp:
+          as:        65000
+          override:  yes
+
+     - name:       ge-0/2/2.10
+       address:    10.128.156.1/24
+       bandwidth:  10m
+       vlanid:     3
+       custom_qos: no
+       ipfix:      [ input ]
+       bgp:
+          peer:   10.128.156.99
+          as:     65002
+          bfd:    True
+
+     - name:       ge-0/2/3.10
+       address:    10.0.250.1/31
+       bandwidth:  10m
+       custom_qos: yes
+       statics:
+         - name:   DC
+           dest:   10.0.0.0/24
+         - name:   Default
+           dest:   0.0.0.0/0
+           backup: True
+           nexthop: 1.2.3.4
+           tag:    112
+
+           
